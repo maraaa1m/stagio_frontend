@@ -13,7 +13,9 @@ import {
   FileText,
   ArrowRight,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  GraduationCap,
+  CreditCard
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -33,6 +35,8 @@ const Register = () => {
     password: '',
     phoneNumber: '',
     univWillaya: '',
+    department: '',
+    socialSecurityNumber: '',
   });
 
   const [companyData, setCompanyData] = useState({
@@ -43,6 +47,7 @@ const Register = () => {
     location: '',
     description: '',
     website: '',
+    registreCommerce: null as File | null,
   });
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
@@ -58,10 +63,10 @@ const Register = () => {
     try {
       const response = await axios.post('/api/register/student/', studentData);
       
-      // If the backend returns tokens on registration, store them
       const data = response.data;
-      const access = data.access || data.token || data.access_token;
-      const refresh = data.refresh || data.refresh_token;
+      const tokens = data.tokens || {};
+      const access = tokens.access || data.access || data.token || data.access_token;
+      const refresh = tokens.refresh || data.refresh || data.refresh_token;
 
       if (access) {
         localStorage.setItem('access_token', access);
@@ -82,12 +87,41 @@ const Register = () => {
 
   const handleCompanySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!companyData.registreCommerce) {
+      setError('Please upload your Registre de Commerce PDF.');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
+    const formData = new FormData();
+    formData.append('company_name', companyData.companyName);
+    formData.append('email', companyData.email);
+    formData.append('password', companyData.password);
+    formData.append('phone_number', companyData.phoneNumber);
+    formData.append('location', companyData.location);
+    formData.append('description', companyData.description);
+    formData.append('website', companyData.website);
+    formData.append('registre_commerce', companyData.registreCommerce);
+
     try {
-      await axios.post('/api/register/company/', companyData);
-      navigate('/login');
+      const response = await axios.post('/api/register/company/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const data = response.data;
+      const tokens = data.tokens || {};
+      const access = tokens.access || data.access || data.token || data.access_token;
+      const refresh = tokens.refresh || data.refresh || data.refresh_token;
+
+      if (access) {
+        localStorage.setItem('access_token', access);
+        if (refresh) localStorage.setItem('refresh_token', refresh);
+        localStorage.setItem('user_role', 'COMPANY');
+        navigate('/company/dashboard');
+      } else {
+        navigate('/login');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
@@ -161,7 +195,7 @@ const Register = () => {
                       type="text"
                       value={studentData.firstName}
                       onChange={(e) => setStudentData({ ...studentData, firstName: e.target.value })}
-                      placeholder="John"
+                      placeholder="First Name"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -178,7 +212,7 @@ const Register = () => {
                       type="text"
                       value={studentData.lastName}
                       onChange={(e) => setStudentData({ ...studentData, lastName: e.target.value })}
-                      placeholder="Doe"
+                      placeholder="Last Name"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -195,7 +229,7 @@ const Register = () => {
                       type="email"
                       value={studentData.email}
                       onChange={(e) => setStudentData({ ...studentData, email: e.target.value })}
-                      placeholder="student@univ-alger.dz"
+                      placeholder="student@univ-constantine02.dz"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -260,6 +294,41 @@ const Register = () => {
                   </div>
                 </div>
 
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Department</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
+                      <GraduationCap size={18} />
+                    </div>
+                    <select required
+                      value={studentData.department}
+                      onChange={(e) => setStudentData({...studentData, department: e.target.value})}
+                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900 appearance-none"
+                    >
+                      <option value="">Select your department</option>
+                      <option value="IFA">Informatique Fondamentale et ses Applications (IFA)</option>
+                      <option value="MI">Mathématiques et Informatique (MI)</option>
+                      <option value="TLSI">Technologies des Logiciels et Systèmes d’Information (TLSI)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">Social Security Number</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
+                      <CreditCard size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      value={studentData.socialSecurityNumber}
+                      onChange={(e) => setStudentData({...studentData, socialSecurityNumber: e.target.value})}
+                      placeholder="ex: 19912524678"
+                      className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
+                    />
+                  </div>
+                </div>
+
                 <div className="md:col-span-2 pt-4">
                   <button 
                     disabled={isLoading}
@@ -290,7 +359,7 @@ const Register = () => {
                       type="text"
                       value={companyData.companyName}
                       onChange={(e) => setCompanyData({ ...companyData, companyName: e.target.value })}
-                      placeholder="Sonatrach"
+                      placeholder="Company Name"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -307,7 +376,7 @@ const Register = () => {
                       type="email"
                       value={companyData.email}
                       onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })}
-                      placeholder="hr@company.com"
+                      placeholder="Email@company.com"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -348,7 +417,7 @@ const Register = () => {
                       type="tel"
                       value={companyData.phoneNumber}
                       onChange={(e) => setCompanyData({ ...companyData, phoneNumber: e.target.value })}
-                      placeholder="021 00 00 00"
+                      placeholder="030 00 00 00"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
                   </div>
@@ -386,6 +455,31 @@ const Register = () => {
                       placeholder="https://company.com"
                       className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus:border-blue-600/30 focus:ring-4 focus:ring-blue-600/5 transition-all font-medium text-navy-900"
                     />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40 ml-4">
+                    Registre de Commerce (PDF) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-navy-900/30 group-focus-within:text-blue-600 transition-colors">
+                      <FileText size={18} />
+                    </div>
+                    <div className="relative">
+                      <input
+                        required
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setCompanyData({...companyData, registreCommerce: e.target.files?.[0] || null})}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="w-full bg-paper border border-gray-100 rounded-2xl py-4 pl-14 pr-6 outline-none focus-within:border-blue-600/30 focus-within:ring-4 focus-within:ring-blue-600/5 transition-all font-medium text-navy-900 min-h-[58px] flex items-center">
+                        <span className={`block truncate ${!companyData.registreCommerce ? 'text-navy-900/40' : 'text-navy-900'}`}>
+                          {companyData.registreCommerce ? companyData.registreCommerce.name : "Select Registre de Commerce (PDF)"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

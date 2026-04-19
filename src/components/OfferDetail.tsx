@@ -58,7 +58,7 @@ const OfferDetail = () => {
         const [offerRes, reportRes, appsRes] = await Promise.all([
           axios.get(`/api/offers/${id}/`, { headers }),
           axios.get(`/api/offers/${id}/match-report/`, { headers }),
-          axios.get('/api/student/applications/', { headers })
+          axios.get('/api/student/my-applications/', { headers })
         ]);
 
         const offerData = offerRes.data;
@@ -83,7 +83,7 @@ const OfferDetail = () => {
         
         const applications = Array.isArray(appsRes.data) ? appsRes.data : (appsRes.data?.applications || []);
         const alreadyApplied = applications.some((app: any) => 
-          (app.offerId || app.offer_id) === Number(id) || 
+          (app.offerId || app.offer_id || app.id) === Number(id) || 
           (app.offerTitle || app.offer_title || app.offer) === offerData.title
         );
         setHasApplied(alreadyApplied);

@@ -20,3 +20,9 @@ export const SORT_OPTIONS = [
   { label: 'Newest', value: 'newest' },
   { label: 'Deadline', value: 'deadline' }
 ];
+export const DEPARTMENTS = [
+  { id: 'IFA', name: 'Informatique Fondamentale (IFA)' },
+  { id: 'TLSI', name: "Systèmes d'Information (TLSI)" },
+  { id: 'MI', name: 'Mathématiques Informatique (MI)' }
+];
+

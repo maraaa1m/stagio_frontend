@@ -26,6 +26,7 @@ interface StudentProfile {
   firstName: string;
   lastName: string;
   email: string;
+  photoUrl?: string;
 }
 
 interface ApplicationStats {
@@ -72,10 +73,10 @@ const StudentDashboard = () => {
         // Parallel fetching
         const [profileRes, statsRes, recommendedRes, expiringRes, notificationsRes] = await Promise.allSettled([
           axios.get('/api/student/profile/', { headers }),
-          axios.get('/api/student/applications/', { headers }),
+          axios.get('/api/student/my-applications/', { headers }),
           axios.get('/api/offers/recommended/', { headers }),
           axios.get('/api/offers/expiring-soon/', { headers }),
-          axios.get('/api/student/notifications/', { headers })
+          axios.get('/api/notifications/', { headers })
         ]);
 
         if (profileRes.status === 'fulfilled') {
@@ -84,7 +85,7 @@ const StudentDashboard = () => {
             firstName: pData.firstName || pData.first_name,
             lastName: pData.lastName || pData.last_name,
             email: pData.email,
-            photoUrl: pData.photoUrl || pData.photo_url || pData.photo
+            photoUrl: pData.profile_photo || pData.profilePhoto || pData.photoUrl || pData.photo_url || pData.photo || ''
           });
         }
         
@@ -162,9 +163,19 @@ const StudentDashboard = () => {
 
   const getInitials = () => {
     if (!profile || !profile.firstName || !profile.lastName) return 'S';
-    const firstInitial = profile.firstName[0] || '';
-    const lastInitial = profile.lastName[0] || '';
-    return `${firstInitial}${lastInitial}`.toUpperCase() || 'S';
+    return `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
+  };
+
+  const getInitialsBadge = (large = false) => {
+    return (
+      <div className={`${large ? 'w-24 h-24 text-3xl' : 'w-12 h-12 text-sm'} rounded-2xl bg-black text-white flex items-center justify-center font-bold shadow-xl shadow-black/10 overflow-hidden`}>
+        {profile?.photoUrl ? (
+          <img src={profile.photoUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          getInitials()
+        )}
+      </div>
+    );
   };
 
   const getMatchScoreColor = (score: number) => {
@@ -174,7 +185,7 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-navy-900 selection:bg-blue-600/10 selection:text-blue-600">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-black selection:bg-blue-600/10 selection:text-blue-600">
       <Toaster position="top-right" richColors />
       
       {/* Sidebar */}
@@ -240,8 +251,12 @@ const StudentDashboard = () => {
         <div className="p-8 border-t border-white/5">
           <div className="bg-white/5 rounded-[2rem] p-5 mb-6 border border-white/5">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-600/20">
-                {getInitials()}
+              <div className="w-12 h-12 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-black/10">
+                {profile?.photoUrl ? (
+                  <img src={profile.photoUrl} alt="Me" className="w-full h-full object-cover" />
+                ) : (
+                  getInitials()
+                )}
               </div>
               <div className="overflow-hidden">
                 <p className="font-bold text-sm truncate leading-tight">{profile?.firstName} {profile?.lastName}</p>
@@ -264,10 +279,10 @@ const StudentDashboard = () => {
         {/* Top Bar */}
         <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
           <div>
-            <h2 className="text-2xl font-display font-bold text-navy-900 tracking-tight">
+            <h2 className="text-2xl font-display font-bold text-black tracking-tight">
               Welcome back, {profile?.firstName || 'Student'}
             </h2>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -275,19 +290,17 @@ const StudentDashboard = () => {
           <div className="flex items-center gap-8">
             <div className="hidden md:flex items-center gap-4 px-5 py-2.5 bg-paper rounded-2xl border border-gray-100">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40">System Online</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-black/40">System Online</span>
             </div>
             
             <div className="flex items-center gap-4">
-              <button className="relative p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+              <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
                 <Bell size={20} />
                 {unreadNotifications > 0 && (
                   <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
                 )}
               </button>
-              <div className="w-12 h-12 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-sm shadow-xl shadow-navy-900/10">
-                {getInitials()}
-              </div>
+              {getInitialsBadge()}
             </div>
           </div>
         </header>
@@ -312,8 +325,8 @@ const StudentDashboard = () => {
                   {stat.icon}
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30 mb-2">{stat.label}</p>
-                  <h4 className="text-3xl font-display font-bold text-navy-900 tracking-tighter">{stat.value}</h4>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">{stat.label}</p>
+                  <h4 className="text-3xl font-display font-bold text-black tracking-tighter">{stat.value}</h4>
                 </div>
               </motion.div>
             ))}
@@ -324,7 +337,7 @@ const StudentDashboard = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative overflow-hidden bg-navy-900 rounded-[3rem] p-10 text-white"
+              className="relative overflow-hidden bg-black rounded-[3rem] p-10 text-white"
             >
               <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-600/20 to-transparent pointer-events-none" />
               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
@@ -351,10 +364,10 @@ const StudentDashboard = () => {
           <section className="space-y-8">
             <div className="flex items-center justify-between px-2">
               <div>
-                <h3 className="text-3xl font-display font-bold text-navy-900 tracking-tight">Neural Matches</h3>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Based on your technical profile and preferences</p>
+                <h3 className="text-3xl font-display font-bold text-black tracking-tight">Neural Matches</h3>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Based on your technical profile and preferences</p>
               </div>
-              <Link to="/student/offers" className="px-6 py-3 bg-white border border-gray-100 rounded-xl text-[11px] font-bold uppercase tracking-widest text-navy-900 hover:bg-paper transition-all flex items-center gap-3">
+              <Link to="/student/offers" className="px-6 py-3 bg-white border border-gray-100 rounded-xl text-[11px] font-bold uppercase tracking-widest text-black hover:bg-paper transition-all flex items-center gap-3">
                 Explore All <ChevronRight size={14} />
               </Link>
             </div>
@@ -366,11 +379,11 @@ const StudentDashboard = () => {
                 ))
               ) : recommendedOffers.length === 0 ? (
                 <div className="lg:col-span-2 bg-white p-20 rounded-[3rem] border border-gray-100 text-center border-dashed">
-                  <div className="w-20 h-20 bg-paper rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-navy-900/10">
+                  <div className="w-20 h-20 bg-paper rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-black/10">
                     <Briefcase size={40} />
                   </div>
-                  <h4 className="text-xl font-display font-bold text-navy-900 mb-2">No recommendations yet</h4>
-                  <p className="text-navy-900/40 font-medium max-w-xs mx-auto">Complete your profile and add skills to see internships tailored for you.</p>
+                  <h4 className="text-xl font-display font-bold text-black mb-2">No recommendations yet</h4>
+                  <p className="text-black/40 font-medium max-w-xs mx-auto">Complete your profile and add skills to see internships tailored for you.</p>
                 </div>
               ) : (
                 recommendedOffers.map((offer, i) => (
@@ -386,12 +399,12 @@ const StudentDashboard = () => {
                     
                     <div className="flex justify-between items-start mb-8 relative z-10">
                       <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-navy-900 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-black flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 group-hover:bg-blue-600 transition-colors duration-500">
                           {offer.companyName[0]}
                         </div>
                         <div>
-                          <h4 className="text-xl font-display font-bold text-navy-900 leading-tight mb-1">{offer.title}</h4>
-                          <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{offer.companyName}</p>
+                          <h4 className="text-xl font-display font-bold text-black leading-tight mb-1">{offer.title}</h4>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-black/30">{offer.companyName}</p>
                         </div>
                       </div>
                       <div className={`px-5 py-2.5 rounded-2xl border text-[11px] font-bold uppercase tracking-widest flex items-center gap-2.5 shadow-sm ${getMatchScoreColor(offer.matchScore)}`}>
@@ -401,11 +414,11 @@ const StudentDashboard = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-3 mb-10 relative z-10">
-                      <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-navy-900/40 uppercase tracking-widest border border-gray-50">
+                      <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-black/40 uppercase tracking-widest border border-gray-50">
                         <MapPin size={14} />
                         {offer.wilaya}
                       </div>
-                      <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-navy-900/40 uppercase tracking-widest border border-gray-100">
+                      <div className="flex items-center gap-2.5 px-4 py-2 bg-paper rounded-xl text-[10px] font-bold text-black/40 uppercase tracking-widest border border-gray-100">
                         <Briefcase size={14} />
                         {offer.type}
                       </div>
@@ -419,7 +432,7 @@ const StudentDashboard = () => {
                     <div className="flex gap-4 relative z-10">
                       <Link 
                         to={`/student/offers/${offer.id}`}
-                        className="flex-1 py-4.5 bg-paper text-navy-900 rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-3 border border-gray-100"
+                        className="flex-1 py-4.5 bg-paper text-black rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-3 border border-gray-100"
                       >
                         Details
                         <ExternalLink size={14} />
@@ -427,7 +440,7 @@ const StudentDashboard = () => {
                       <button 
                         onClick={() => handleApply(offer.id)}
                         disabled={isApplying === offer.id}
-                        className="flex-1 py-4.5 bg-navy-900 text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-navy-900/10 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
+                        className="flex-1 py-4.5 bg-black text-white rounded-2xl font-bold text-[11px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-black/10 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
                       >
                         {isApplying === offer.id ? <Loader2 size={16} className="animate-spin" /> : 'Apply Now'}
                       </button>
@@ -441,8 +454,8 @@ const StudentDashboard = () => {
           {/* Expiring Soon */}
           <section className="space-y-8">
             <div className="px-2">
-              <h3 className="text-2xl font-display font-bold text-navy-900 tracking-tight">Expiring Soon</h3>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Last chance to apply for these opportunities</p>
+              <h3 className="text-2xl font-display font-bold text-black tracking-tight">Expiring Soon</h3>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Last chance to apply for these opportunities</p>
             </div>
             
             <div className="flex gap-8 overflow-x-auto pb-8 no-scrollbar -mx-2 px-2">
@@ -452,7 +465,7 @@ const StudentDashboard = () => {
                 ))
               ) : expiringOffers.length === 0 ? (
                 <div className="w-full bg-white p-12 rounded-[2.5rem] border border-gray-100 text-center border-dashed">
-                  <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No urgent deadlines found</p>
+                  <p className="text-black/30 font-bold uppercase tracking-widest text-[11px]">No urgent deadlines found</p>
                 </div>
               ) : (
                 expiringOffers.map((offer, i) => (
@@ -468,13 +481,13 @@ const StudentDashboard = () => {
                       <div className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-red-100/50">
                         {offer.daysLeft} days left
                       </div>
-                      <div className="w-10 h-10 rounded-xl bg-paper flex items-center justify-center text-navy-900/20 group-hover:text-red-500 transition-colors">
+                      <div className="w-10 h-10 rounded-xl bg-paper flex items-center justify-center text-black/20 group-hover:text-red-500 transition-colors">
                         <Clock size={18} />
                       </div>
                     </div>
-                    <h4 className="text-lg font-display font-bold text-navy-900 mb-2 truncate group-hover:text-blue-600 transition-colors">{offer.title}</h4>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mb-6">{offer.companyName}</p>
-                    <Link to={`/student/offers/${offer.id}`} className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-blue-600 hover:text-navy-900 transition-colors">
+                    <h4 className="text-lg font-display font-bold text-black mb-2 truncate group-hover:text-blue-600 transition-colors">{offer.title}</h4>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mb-6">{offer.companyName}</p>
+                    <Link to={`/student/offers/${offer.id}`} className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-blue-600 hover:text-black transition-colors">
                       View Opportunity <ChevronRight size={14} />
                     </Link>
                   </motion.div>
@@ -489,3 +502,4 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
+

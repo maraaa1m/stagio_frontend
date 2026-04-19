@@ -17,7 +17,9 @@ import {
   AlertCircle,
   MessageSquare,
   Search,
-  Filter
+  Filter,
+  ArrowRight,
+  FileText
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -31,9 +33,11 @@ interface Application {
     firstName: string;
     lastName: string;
     email: string;
+    photo?: string;
     skills: string[];
     githubLink?: string;
     portfolioLink?: string;
+    cv?: string;
   };
   offer: string; // Offer title
 }
@@ -44,6 +48,10 @@ const CompanyApplications = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('ALL');
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
+  const [reviewModal, setReviewModal] = useState<{ isOpen: boolean; app: Application | null }>({
+    isOpen: false,
+    app: null
+  });
   const [refuseModal, setRefuseModal] = useState<{ isOpen: boolean; appId: number | null }>({
     isOpen: false,
     appId: null
@@ -69,9 +77,11 @@ const CompanyApplications = () => {
             firstName: a.student?.firstName || a.student?.first_name || '',
             lastName: a.student?.lastName || a.student?.last_name || '',
             email: a.student?.email || '',
+            photo: a.student?.profile_photo || a.student?.profilePhoto || a.student?.photo || '',
             skills: a.student?.skills || [],
             githubLink: a.student?.githubLink || a.student?.github_link || '',
-            portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || ''
+            portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || '',
+            cv: a.student?.cv || a.student?.resume || a.student?.cv_url || a.student?.cv_file || ''
           },
           offer: a.offer_title || a.offer || ''
         }));
@@ -263,12 +273,16 @@ const CompanyApplications = () => {
                 >
                   <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                     <div className="flex items-center gap-6">
-                      <div className="w-16 h-16 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-2xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                        {app.student.firstName[0]}
+                      <div className="w-16 h-16 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 group-hover:scale-105 transition-all duration-500">
+                        {app.student.photo ? (
+                          <img src={app.student.photo} alt={app.student.firstName} className="w-full h-full object-cover" />
+                        ) : (
+                          app.student.firstName[0]
+                        )}
                       </div>
                       <div>
-                        <h4 className="text-xl font-display font-bold text-navy-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{app.student.firstName} {app.student.lastName}</h4>
-                        <a href={`mailto:${app.student.email}`} className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 hover:text-blue-600 flex items-center gap-2">
+                        <h4 className="text-xl font-display font-bold text-black leading-tight mb-1 group-hover:text-blue-600 transition-colors">{app.student.firstName} {app.student.lastName}</h4>
+                        <a href={`mailto:${app.student.email}`} className="text-[11px] font-bold uppercase tracking-widest text-black/30 hover:text-blue-600 flex items-center gap-2">
                           <Mail size={12} />
                           {app.student.email}
                         </a>
@@ -307,32 +321,13 @@ const CompanyApplications = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {app.status === 'PENDING' ? (
-                        <>
-                          <button 
-                            onClick={() => handleAccept(app.id)}
-                            disabled={isActionLoading === app.id}
-                            className="px-6 py-3 bg-green-50 text-green-600 rounded-2xl hover:bg-green-600 hover:text-white transition-all disabled:opacity-50 flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-sm"
-                          >
-                            {isActionLoading === app.id ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                            Accept
-                          </button>
-                          <button 
-                            onClick={() => setRefuseModal({ isOpen: true, appId: app.id })}
-                            disabled={isActionLoading === app.id}
-                            className="px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50 flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-sm"
-                          >
-                            <X size={16} />
-                            Refuse
-                          </button>
-                        </>
-                      ) : (
-                        <span className={`px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-sm ${
-                          app.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-500 border border-red-100'
-                        }`}>
-                          {app.status}
-                        </span>
-                      )}
+                      <button 
+                        onClick={() => setReviewModal({ isOpen: true, app: app })}
+                        className="px-8 py-4 bg-navy-900 text-white rounded-[1.5rem] hover:bg-blue-600 transition-all font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-navy-900/10 flex items-center gap-3 mx-auto"
+                      >
+                        Review Candidate
+                        <ArrowRight size={16} />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -402,8 +397,140 @@ const CompanyApplications = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Review Candidate Modal */}
+      <AnimatePresence>
+        {reviewModal.isOpen && reviewModal.app && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setReviewModal({ isOpen: false, app: null })}
+              className="absolute inset-0 bg-navy-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-10 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 transition-all duration-500">
+                    {reviewModal.app.student.photo ? (
+                      <img src={reviewModal.app.student.photo} alt={reviewModal.app.student.firstName} className="w-full h-full object-cover" />
+                    ) : (
+                      reviewModal.app.student.firstName[0]
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-display font-bold text-black tracking-tight">
+                      {reviewModal.app.student.firstName} {reviewModal.app.student.lastName}
+                    </h3>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">
+                      {reviewModal.app.student.email}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setReviewModal({ isOpen: false, app: null })}
+                  className="p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-navy-900 transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-10 space-y-10 overflow-y-auto max-h-[70vh]">
+                {/* Technical Skills */}
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30">Technical Expertise</p>
+                  <div className="flex flex-wrap gap-2.5">
+                    {reviewModal.app.student.skills.map((skill: string) => (
+                      <span key={skill} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-navy-900/60 uppercase tracking-widest border border-gray-100">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Evidence & Resources */}
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-navy-900/30">Candidate Evidence</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a 
+                      href={reviewModal.app.student.cv}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-blue-50 text-blue-600 rounded-[2rem] border border-blue-100/50 hover:bg-blue-600 hover:text-white transition-all group"
+                    >
+                      <FileText size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Official CV</span>
+                    </a>
+                    <a 
+                      href={reviewModal.app.student.githubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-paper text-navy-900/40 rounded-[2rem] border border-gray-100 hover:border-navy-900 hover:text-navy-900 transition-all"
+                    >
+                      <Github size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">GitHub</span>
+                    </a>
+                    <a 
+                      href={reviewModal.app.student.portfolioLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-paper text-navy-900/40 rounded-[2rem] border border-gray-100 hover:border-navy-900 hover:text-navy-900 transition-all"
+                    >
+                      <Globe size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Portfolio</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Decision Area */}
+                <div className="pt-10 border-t border-gray-50 flex flex-col md:flex-row gap-4">
+                  {reviewModal.app.status === 'PENDING' ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          handleAccept(reviewModal.app!.id);
+                          setReviewModal({ isOpen: false, app: null });
+                        }}
+                        disabled={isActionLoading === reviewModal.app.id}
+                        className="flex-1 py-5 bg-green-600 text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-navy-900 transition-all shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+                      >
+                        {isActionLoading === reviewModal.app.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                        Accept Application
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setRefuseModal({ isOpen: true, appId: reviewModal.app!.id });
+                          setReviewModal({ isOpen: false, app: null });
+                        }}
+                        disabled={isActionLoading === reviewModal.app.id}
+                        className="flex-1 py-5 bg-paper text-red-500 rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 transition-all border border-gray-100 flex items-center justify-center gap-3"
+                      >
+                        <X size={18} />
+                        Refuse Candidate
+                      </button>
+                    </>
+                  ) : (
+                    <div className={`w-full py-5 rounded-[1.5rem] text-center font-bold text-[11px] uppercase tracking-widest border ${
+                      reviewModal.app.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'
+                    }`}>
+                      Application Status: {reviewModal.app.status}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default CompanyApplications;
+

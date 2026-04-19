@@ -20,6 +20,8 @@ import AdminCompanies     from "./components/AdminCompanies";
 import AdminAgreements    from "./components/AdminAgreements";
 import AdminStatistics    from "./components/AdminStatistics";
 import LandingPage        from "./components/LandingPage";
+import AdminStudents      from "./components/AdminStudents";
+import AdminApplications from "./components/AdminApplications";
 import { ProfileGuardProvider } from "./lib/profileGuard";
 
 export default function App() {
@@ -61,6 +63,8 @@ export default function App() {
             <Route path="/admin/companies"            element={<AdminCompanies />} />
             <Route path="/admin/agreements"           element={<AdminAgreements />} />
             <Route path="/admin/statistics"           element={<AdminStatistics />} />
+            <Route path="/admin/students"             element={<AdminStudents />} />
+            <Route path="/admin/applications" element={<AdminApplications />} />
           </Routes>
         </div>
       </ProfileGuardProvider>

@@ -16,7 +16,11 @@ import {
   Loader2,
   X,
   MessageSquare,
-  Search
+  Search,
+  ArrowRight,
+  Github,
+  Globe,
+  FileText
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -32,10 +36,15 @@ interface Application {
   id: number;
   studentName: string;
   studentEmail: string;
+  studentPhoto?: string;
   offerTitle: string;
   matchingScore: number;
   status: 'PENDING' | 'ACCEPTED' | 'REFUSED';
   appliedAt: string;
+  skills: string[];
+  githubLink?: string;
+  portfolioLink?: string;
+  cv?: string;
 }
 
 interface CompanyOffer {
@@ -54,6 +63,10 @@ const CompanyDashboard = () => {
   const [offers, setOffers] = useState<CompanyOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
+  const [reviewModal, setReviewModal] = useState<{ isOpen: boolean; app: Application | null }>({
+    isOpen: false,
+    app: null
+  });
   const [refuseModal, setRefuseModal] = useState<{ isOpen: boolean; appId: number | null }>({
     isOpen: false,
     appId: null
@@ -85,10 +98,15 @@ const CompanyDashboard = () => {
             id: a.id,
             studentName: `${a.student?.firstName || a.student?.first_name || ''} ${a.student?.lastName || a.student?.last_name || ''}`,
             studentEmail: a.student?.email || '',
+            studentPhoto: a.student?.profile_photo || a.student?.profilePhoto || a.student?.photo || '',
             offerTitle: a.offer_title || a.offer || '',
             matchingScore: a.matchingScore || a.matching_score || 0,
             status: a.status,
-            appliedAt: a.applicationDate || a.application_date || a.applied_at || ''
+            appliedAt: a.applicationDate || a.application_date || a.applied_at || '',
+            skills: a.student?.skills || [],
+            githubLink: a.student?.githubLink || a.student?.github_link || '',
+            portfolioLink: a.student?.portfolioLink || a.student?.portfolio_link || '',
+            cv: a.student?.cv || a.student?.resume || a.student?.cv_url || a.student?.cv_file || ''
           }));
           setApplications(mapped.sort((a: any, b: any) => b.matchingScore - a.matchingScore));
         }
@@ -164,7 +182,7 @@ const CompanyDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-navy-900 selection:bg-blue-600/10 selection:text-blue-600">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-black selection:bg-blue-600/10 selection:text-blue-600">
       <Toaster position="top-right" richColors />
       
       {/* Sidebar */}
@@ -231,10 +249,10 @@ const CompanyDashboard = () => {
         {/* Top Bar */}
         <header className="h-24 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-40">
           <div>
-            <h2 className="text-2xl font-display font-bold text-navy-900 tracking-tight">
+            <h2 className="text-2xl font-display font-bold text-black tracking-tight">
               Welcome back, {profile?.companyName || 'Company'}
             </h2>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
@@ -242,15 +260,15 @@ const CompanyDashboard = () => {
           <div className="flex items-center gap-8">
             <div className="hidden md:flex items-center gap-4 px-5 py-2.5 bg-paper rounded-2xl border border-gray-100">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-[11px] font-bold uppercase tracking-widest text-navy-900/40">Recruiter Portal</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-black/40">Recruiter Portal</span>
             </div>
             
             <div className="flex items-center gap-4">
-              <button className="relative p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
+              <button className="relative p-3 bg-paper rounded-2xl text-black/40 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-100">
                 <Bell size={20} />
                 <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white" />
               </button>
-              <div className="w-12 h-12 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-sm shadow-xl shadow-navy-900/10">
+              <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-sm shadow-xl shadow-black/10">
                 {profile?.companyName?.[0] || 'C'}
               </div>
             </div>
@@ -311,10 +329,10 @@ const CompanyDashboard = () => {
             <div className="lg:col-span-2 space-y-8">
               <div className="flex items-center justify-between px-2">
                 <div>
-                  <h3 className="text-2xl font-display font-bold text-navy-900 tracking-tight">Recent Applicants</h3>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30 mt-1">Candidates ranked by matching score</p>
+                  <h3 className="text-2xl font-display font-bold text-black tracking-tight">Recent Applicants</h3>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">Candidates ranked by matching score</p>
                 </div>
-                <Link to="/company/applications" className="px-5 py-2.5 bg-white border border-gray-100 rounded-xl text-[11px] font-bold uppercase tracking-widest text-navy-900 hover:bg-paper transition-all flex items-center gap-3">
+                <Link to="/company/applications" className="px-5 py-2.5 bg-white border border-gray-100 rounded-xl text-[11px] font-bold uppercase tracking-widest text-black hover:bg-paper transition-all flex items-center gap-3">
                   View All <ChevronRight size={14} />
                 </Link>
               </div>
@@ -343,12 +361,16 @@ const CompanyDashboard = () => {
                     >
                       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                         <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl bg-navy-900 text-white flex items-center justify-center font-bold text-xl shadow-xl shadow-navy-900/10 group-hover:bg-blue-600 transition-colors duration-500">
-                            {app.studentName[0]}
+                          <div className="w-14 h-14 rounded-2xl bg-black overflow-hidden flex items-center justify-center text-white font-bold text-xl shadow-xl shadow-black/10 transition-all duration-500">
+                            {app.studentPhoto ? (
+                              <img src={app.studentPhoto} alt={app.studentName} className="w-full h-full object-cover" />
+                            ) : (
+                              app.studentName[0]
+                            )}
                           </div>
                           <div>
-                            <h4 className="text-lg font-display font-bold text-navy-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">{app.studentName}</h4>
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-navy-900/30">{app.studentEmail}</p>
+                            <h4 className="text-lg font-display font-bold text-black leading-tight mb-1 group-hover:text-blue-600 transition-colors">{app.studentName}</h4>
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-black/30">{app.studentEmail}</p>
                           </div>
                         </div>
 
@@ -363,32 +385,12 @@ const CompanyDashboard = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          {app.status === 'PENDING' ? (
-                            <>
-                              <button 
-                                onClick={() => handleAccept(app.id)}
-                                disabled={isActionLoading === app.id}
-                                className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl hover:bg-green-600 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center shadow-sm"
-                                title="Accept Candidate"
-                              >
-                                {isActionLoading === app.id ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
-                              </button>
-                              <button 
-                                onClick={() => setRefuseModal({ isOpen: true, appId: app.id })}
-                                disabled={isActionLoading === app.id}
-                                className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center shadow-sm"
-                                title="Refuse Candidate"
-                              >
-                                <X size={20} />
-                              </button>
-                            </>
-                          ) : (
-                            <span className={`px-5 py-2.5 rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-sm ${
-                              app.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-500 border border-red-100'
-                            }`}>
-                              {app.status}
-                            </span>
-                          )}
+                          <button 
+                            onClick={() => setReviewModal({ isOpen: true, app: app })}
+                            className="px-6 py-3 bg-navy-900 text-white rounded-2xl hover:bg-blue-600 transition-all font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-navy-900/10 flex items-center gap-2"
+                          >
+                            Review
+                          </button>
                         </div>
                       </div>
                     </motion.div>
@@ -414,7 +416,7 @@ const CompanyDashboard = () => {
                 ) : offers.length === 0 ? (
                   <div className="bg-white p-12 rounded-[3rem] border border-gray-100 text-center border-dashed">
                     <p className="text-navy-900/30 font-bold uppercase tracking-widest text-[11px]">No active offers</p>
-                    <Link to="/company/offers/new" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
+                    <Link to="/company/offers" className="mt-6 inline-flex px-6 py-3 bg-navy-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 transition-all">Post Now</Link>
                   </div>
                 ) : (
                   offers.map((offer, i) => (
@@ -511,6 +513,134 @@ const CompanyDashboard = () => {
                   >
                     {isActionLoading !== null ? <Loader2 size={16} className="animate-spin" /> : 'Confirm Refusal'}
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Review Candidate Modal */}
+      <AnimatePresence>
+        {reviewModal.isOpen && reviewModal.app && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setReviewModal({ isOpen: false, app: null })}
+              className="absolute inset-0 bg-navy-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-10 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-black overflow-hidden flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-black/10 transition-all duration-500">
+                    {reviewModal.app.studentPhoto ? (
+                      <img src={reviewModal.app.studentPhoto} alt={reviewModal.app.studentName} className="w-full h-full object-cover" />
+                    ) : (
+                      reviewModal.app.studentName[0]
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-display font-bold text-black tracking-tight">
+                      {reviewModal.app.studentName}
+                    </h3>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-black/30 mt-1">
+                      {reviewModal.app.studentEmail}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setReviewModal({ isOpen: false, app: null })}
+                  className="p-3 bg-paper rounded-2xl text-navy-900/40 hover:text-navy-900 transition-all"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-10 space-y-10 overflow-y-auto max-h-[70vh]">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Technical Expertise</p>
+                  <div className="flex flex-wrap gap-2.5">
+                    {reviewModal.app.skills.map((skill: string) => (
+                      <span key={skill} className="px-5 py-2.5 bg-paper rounded-[1rem] text-[11px] font-bold text-black/60 uppercase tracking-widest border border-gray-100">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30">Candidate Evidence</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a 
+                      href={reviewModal.app.cv}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-blue-50 text-blue-600 rounded-[2rem] border border-blue-100/50 hover:bg-blue-600 hover:text-white transition-all group"
+                    >
+                      <FileText size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Official CV</span>
+                    </a>
+                    <a 
+                      href={reviewModal.app.githubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-paper text-navy-900/40 rounded-[2rem] border border-gray-100 hover:border-navy-900 hover:text-navy-900 transition-all"
+                    >
+                      <Github size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">GitHub</span>
+                    </a>
+                    <a 
+                      href={reviewModal.app.portfolioLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center justify-center p-6 bg-paper text-navy-900/40 rounded-[2rem] border border-gray-100 hover:border-navy-900 hover:text-navy-900 transition-all"
+                    >
+                      <Globe size={24} className="mb-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Portfolio</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="pt-10 border-t border-gray-50 flex flex-col md:flex-row gap-4">
+                  {reviewModal.app.status === 'PENDING' ? (
+                    <>
+                      <button 
+                        onClick={() => {
+                          handleAccept(reviewModal.app!.id);
+                          setReviewModal({ isOpen: false, app: null });
+                        }}
+                        disabled={isActionLoading === reviewModal.app.id}
+                        className="flex-1 py-5 bg-green-600 text-white rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-navy-900 transition-all shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+                      >
+                        {isActionLoading === reviewModal.app.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                        Accept Application
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setRefuseModal({ isOpen: true, appId: reviewModal.app!.id });
+                          setReviewModal({ isOpen: false, app: null });
+                        }}
+                        disabled={isActionLoading === reviewModal.app.id}
+                        className="flex-1 py-5 bg-paper text-red-500 rounded-[1.5rem] font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 transition-all border border-gray-100 flex items-center justify-center gap-3"
+                      >
+                        <X size={18} />
+                        Refuse Candidate
+                      </button>
+                    </>
+                  ) : (
+                    <div className={`w-full py-5 rounded-[1.5rem] text-center font-bold text-[11px] uppercase tracking-widest border ${
+                      reviewModal.app.status === 'ACCEPTED' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-500 border-red-100'
+                    }`}>
+                      Application Status: {reviewModal.app.status}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
